@@ -55,10 +55,11 @@ class ProductionConfig(Config):
     SECRET_KEY = os.environ.get('SECRET_KEY')
 
     # Handle Render's postgres:// URL format (SQLAlchemy requires postgresql://)
+    # Fall back to SQLite if no DATABASE_URL is set
     _database_url = os.environ.get('DATABASE_URL', '')
     if _database_url.startswith('postgres://'):
         _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = _database_url
+    SQLALCHEMY_DATABASE_URI = _database_url or f'sqlite:///{BASE_DIR / "pawpal.db"}'
 
 
 class TestingConfig(Config):
