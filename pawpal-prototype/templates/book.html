@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Request Booking - PawPal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Back Link -->
+    <a href="/browse" class="inline-flex items-center text-gray-600 hover:text-paw-primary transition">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back to Browse
+    </a>
+
+    <!-- Booking Request Form -->
+    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="p-6 border-b bg-gradient-to-r from-paw-primary to-purple-500">
+            <h1 class="text-xl font-bold text-white flex items-center">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Request Dog-Sitting
+            </h1>
+            <p class="text-purple-100 text-sm mt-1">Send a request to {{ provider.display_name }}</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Provider Info -->
+            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <img src="{{ provider.profile_photo_url }}" alt="{{ provider.display_name }}"
+                     class="w-16 h-16 rounded-full object-cover border-2 border-white shadow">
+                <div>
+                    <h3 class="font-bold text-lg">{{ provider.display_name }}</h3>
+                    <p class="text-gray-500 text-sm flex items-center">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ provider.location }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slot Details -->
+            <div class="p-4 border rounded-lg">
+                <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-calendar-check text-paw-primary mr-2"></i>
+                    Selected Time Slot
+                </h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">Date</span>
+                        <p class="font-medium">{{ slot.date.strftime('%A, %B %d, %Y') }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Time</span>
+                        <p class="font-medium">{{ slot.time_range_str() }}</p>
+                    </div>
+                </div>
+                {% if slot.notes %}
+                <div class="mt-3 pt-3 border-t">
+                    <span class="text-gray-500 text-sm">Provider's Note:</span>
+                    <p class="text-sm text-gray-700 mt-1">{{ slot.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Your Dog Info -->
+            <div class="p-4 border rounded-lg">
+                <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-dog text-paw-secondary mr-2"></i>
+                    Your Dog
+                </h4>
+                <div class="flex items-center space-x-4">
+                    <img src="{{ user_dog.photo_url }}" alt="{{ user_dog.name }}"
+                         class="w-16 h-16 rounded-lg object-cover">
+                    <div>
+                        <p class="font-medium">{{ user_dog.name }}</p>
+                        <p class="text-sm text-gray-500">{{ user_dog.breed }} • {{ user_dog.size.value|capitalize }} • {{ user_dog.age }} years old</p>
+                        <p class="text-sm text-gray-600 mt-1">{{ user_dog.temperament }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Form -->
+            <form action="/book/{{ slot.id }}/submit" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment-alt text-paw-primary mr-1"></i>
+                        Message to {{ provider.display_name.split()[0] }}
+                    </label>
+                    <textarea name="message" rows="4"
+                              class="w-full border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-paw-primary focus:border-paw-primary resize-none"
+                              placeholder="Introduce yourself and {{ user_dog.name }}! Share any relevant details like pickup/dropoff arrangements, special care needs, etc.">Hi {{ provider.display_name.split()[0] }}! I'm looking for someone to watch {{ user_dog.name }} during this time. </textarea>
+                    <p class="text-xs text-gray-400 mt-1">Be sure to include pickup/dropoff details and any special instructions</p>
+                </div>
+
+                <!-- Care Instructions Reminder -->
+                {% if user_dog.care_instructions %}
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p class="text-sm text-amber-800 flex items-start">
+                        <i class="fas fa-info-circle mr-2 mt-0.5"></i>
+                        <span><strong>{{ user_dog.name }}'s care notes:</strong> {{ user_dog.care_instructions }}</span>
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Submit Buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <a href="/browse" class="flex-1 text-center py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                        Cancel
+                    </a>
+                    <button type="submit" class="flex-1 py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center justify-center">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Send Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h4 class="font-medium text-blue-800 flex items-center mb-2">
+            <i class="fas fa-lightbulb mr-2"></i>
+            Tips for a Great Request
+        </h4>
+        <ul class="text-sm text-blue-700 space-y-1">
+            <li>• Be specific about pickup and dropoff times and locations</li>
+            <li>• Mention if your dog has any specific needs or quirks</li>
+            <li>• Include your phone number if you're comfortable</li>
+            <li>• The provider will receive a notification of your request</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

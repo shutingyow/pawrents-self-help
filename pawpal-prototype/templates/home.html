@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}PawPal - Home{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Welcome Banner -->
+    <div class="bg-gradient-to-r from-paw-primary to-purple-500 rounded-2xl p-6 md:p-8 text-white">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <div class="text-center md:text-left mb-4 md:mb-0">
+                <h1 class="text-2xl md:text-3xl font-bold mb-2">
+                    Welcome back, {{ current_user.display_name.split()[0] }}! 🐕
+                </h1>
+                <p class="text-purple-100">
+                    Ready to connect with fellow pawrents in {{ current_user.location }}?
+                </p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="/browse" class="bg-white text-paw-primary px-6 py-3 rounded-lg font-medium hover:bg-purple-50 transition">
+                    Find Help
+                </a>
+                <a href="/calendar" class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition border border-purple-400">
+                    Set Availability
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Pending Requests</p>
+                    <p class="text-2xl font-bold text-paw-primary">{{ pending_requests }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-clock text-paw-primary text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Upcoming Bookings</p>
+                    <p class="text-2xl font-bold text-green-600">{{ upcoming_bookings }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-calendar-check text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Available Slots</p>
+                    <p class="text-2xl font-bold text-amber-600">{{ available_slots }}</p>
+                </div>
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-hand-holding-heart text-amber-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Community Members</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ community_members }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+        <!-- My Dog Card -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h2 class="font-semibold text-lg flex items-center">
+                    <i class="fas fa-dog text-paw-primary mr-2"></i>
+                    My Furry Friend
+                </h2>
+            </div>
+            <div class="p-4">
+                <div class="flex items-start space-x-4">
+                    <img src="{{ user_dog.photo_url }}" alt="{{ user_dog.name }}"
+                         class="w-24 h-24 rounded-xl object-cover">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-xl">{{ user_dog.name }}</h3>
+                        <p class="text-gray-500">{{ user_dog.breed }} • {{ user_dog.age }} years old</p>
+                        <span class="inline-block mt-2 px-3 py-1 bg-purple-100 text-paw-primary rounded-full text-sm">
+                            {{ user_dog.size.value|capitalize }}
+                        </span>
+                        <p class="mt-2 text-sm text-gray-600">{{ user_dog.temperament }}</p>
+                    </div>
+                </div>
+                <a href="/profile" class="mt-4 block text-center text-paw-primary hover:underline text-sm">
+                    Edit Profile →
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h2 class="font-semibold text-lg flex items-center">
+                    <i class="fas fa-bell text-paw-primary mr-2"></i>
+                    Recent Activity
+                </h2>
+            </div>
+            <div class="divide-y max-h-64 overflow-y-auto">
+                {% for notif in recent_notifications %}
+                <div class="p-4 hover:bg-gray-50 transition {% if not notif.is_read %}bg-purple-50{% endif %}">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                            {% if 'Request' in notif.title %}bg-blue-100 text-blue-600
+                            {% elif 'Confirmed' in notif.title %}bg-green-100 text-green-600
+                            {% elif 'Event' in notif.title %}bg-amber-100 text-amber-600
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            <i class="fas {% if 'Request' in notif.title %}fa-inbox{% elif 'Confirmed' in notif.title %}fa-check{% elif 'Event' in notif.title %}fa-calendar{% else %}fa-bell{% endif %} text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm">{{ notif.title }}</p>
+                            <p class="text-gray-500 text-sm truncate">{{ notif.message }}</p>
+                        </div>
+                        {% if not notif.is_read %}
+                        <span class="w-2 h-2 bg-paw-primary rounded-full flex-shrink-0"></span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="/notifications" class="block p-3 text-center text-paw-primary hover:bg-gray-50 border-t text-sm">
+                View All Notifications →
+            </a>
+        </div>
+    </div>
+
+    <!-- Available Pawrents Nearby -->
+    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+            <h2 class="font-semibold text-lg flex items-center">
+                <i class="fas fa-map-marker-alt text-paw-primary mr-2"></i>
+                Pawrents Available Nearby
+            </h2>
+            <a href="/browse" class="text-paw-primary hover:underline text-sm">View All →</a>
+        </div>
+        <div class="p-4">
+            <div class="grid md:grid-cols-3 gap-4">
+                {% for item in nearby_available[:3] %}
+                <div class="border rounded-xl p-4 hover:shadow-md transition">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <img src="{{ item.user.profile_photo_url }}" alt="{{ item.user.display_name }}"
+                             class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <h3 class="font-medium">{{ item.user.display_name }}</h3>
+                            <p class="text-gray-500 text-sm">{{ item.user.location }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600 mb-2">
+                        <i class="fas fa-dog text-paw-secondary mr-2"></i>
+                        {{ item.dog.name }} ({{ item.dog.breed }})
+                    </div>
+                    <div class="flex items-center text-sm text-green-600 mb-3">
+                        <i class="fas fa-clock mr-2"></i>
+                        {{ item.slot.date.strftime('%a, %b %d') }} • {{ item.slot.time_range_str() }}
+                    </div>
+                    <a href="/book/{{ item.slot.id }}" class="block text-center bg-paw-primary text-white py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                        Request Booking
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

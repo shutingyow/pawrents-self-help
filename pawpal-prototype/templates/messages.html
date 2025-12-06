@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - PawPal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Messages</h1>
+            <p class="text-gray-500">Chat with other pawrents</p>
+        </div>
+    </div>
+
+    <!-- Conversations List -->
+    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        {% if conversations %}
+        <div class="divide-y">
+            {% for item in conversations %}
+            <a href="/messages/{{ item.other_user.id }}" class="block p-4 hover:bg-gray-50 transition {% if item.unread_count > 0 %}bg-purple-50{% endif %}">
+                <div class="flex items-center space-x-4">
+                    <!-- Avatar -->
+                    <img src="{{ item.other_user.profile_photo_url or 'https://via.placeholder.com/48' }}"
+                         alt="{{ item.other_user.display_name }}"
+                         class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-medium text-gray-800 truncate">{{ item.other_user.display_name }}</h3>
+                            {% if item.last_message %}
+                            <span class="text-xs text-gray-400">
+                                {% set time_diff = (now - item.last_message.created_at).total_seconds() %}
+                                {% if time_diff < 60 %}
+                                Just now
+                                {% elif time_diff < 3600 %}
+                                {{ (time_diff / 60)|int }}m
+                                {% elif time_diff < 86400 %}
+                                {{ (time_diff / 3600)|int }}h
+                                {% else %}
+                                {{ (time_diff / 86400)|int }}d
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center justify-between mt-1">
+                            {% if item.last_message %}
+                            <p class="text-sm text-gray-500 truncate">
+                                {% if item.last_message.sender_id == current_user.id %}
+                                <span class="text-gray-400">You: </span>
+                                {% endif %}
+                                {{ item.last_message.content[:50] }}{% if item.last_message.content|length > 50 %}...{% endif %}
+                            </p>
+                            {% else %}
+                            <p class="text-sm text-gray-400 italic">No messages yet</p>
+                            {% endif %}
+
+                            {% if item.unread_count > 0 %}
+                            <span class="bg-paw-primary text-white text-xs font-bold px-2 py-1 rounded-full flex-shrink-0">
+                                {{ item.unread_count }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comments text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-800 mb-2">No messages yet</h3>
+            <p class="text-gray-500 mb-4">Start a conversation by messaging a sitter from the browse page!</p>
+            <a href="/browse" class="inline-flex items-center px-4 py-2 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                <i class="fas fa-search mr-2"></i>
+                Find Sitters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

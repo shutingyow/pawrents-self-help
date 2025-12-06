@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Request Sent - PawPal{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto text-center py-12">
+    <div class="bg-white rounded-xl shadow-sm border p-8 space-y-6">
+        <!-- Success Icon -->
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <i class="fas fa-check text-green-500 text-3xl"></i>
+        </div>
+
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Request Sent!</h1>
+            <p class="text-gray-500 mt-2">Your booking request has been sent to {{ provider.display_name }}</p>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="p-4 bg-gray-50 rounded-lg text-left">
+            <div class="flex items-center space-x-3 mb-3">
+                <img src="{{ provider.profile_photo_url }}" alt="{{ provider.display_name }}"
+                     class="w-10 h-10 rounded-full object-cover">
+                <div>
+                    <p class="font-medium">{{ provider.display_name }}</p>
+                    <p class="text-sm text-gray-500">{{ provider.location }}</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-600 space-y-1">
+                <p><i class="fas fa-calendar text-paw-primary mr-2"></i>{{ slot.date.strftime('%A, %B %d, %Y') }}</p>
+                <p><i class="fas fa-clock text-paw-secondary mr-2"></i>{{ slot.time_range_str() }}</p>
+            </div>
+        </div>
+
+        <!-- What's Next -->
+        <div class="text-left">
+            <h3 class="font-medium text-gray-800 mb-2">What happens next?</h3>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li class="flex items-start">
+                    <span class="w-5 h-5 bg-paw-primary text-white rounded-full flex items-center justify-center text-xs mr-2 flex-shrink-0 mt-0.5">1</span>
+                    {{ provider.display_name.split()[0] }} will receive a notification
+                </li>
+                <li class="flex items-start">
+                    <span class="w-5 h-5 bg-paw-primary text-white rounded-full flex items-center justify-center text-xs mr-2 flex-shrink-0 mt-0.5">2</span>
+                    They'll review your request and profile
+                </li>
+                <li class="flex items-start">
+                    <span class="w-5 h-5 bg-paw-primary text-white rounded-full flex items-center justify-center text-xs mr-2 flex-shrink-0 mt-0.5">3</span>
+                    You'll be notified when they respond
+                </li>
+            </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col space-y-3 pt-4">
+            <a href="/bookings" class="py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center justify-center">
+                <i class="fas fa-clipboard-list mr-2"></i>
+                View My Bookings
+            </a>
+            <a href="/browse" class="py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                Continue Browsing
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

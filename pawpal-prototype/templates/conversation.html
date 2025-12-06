@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.display_name }} - PawPal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto flex flex-col" style="height: calc(100vh - 180px);">
+    <!-- Header -->
+    <div class="bg-white rounded-t-xl shadow-sm border border-b-0 p-4">
+        <div class="flex items-center space-x-4">
+            <a href="/messages" class="text-gray-400 hover:text-gray-600 transition">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <img src="{{ other_user.profile_photo_url or 'https://via.placeholder.com/48' }}"
+                 alt="{{ other_user.display_name }}"
+                 class="w-10 h-10 rounded-full object-cover">
+            <div class="flex-1">
+                <h2 class="font-semibold text-gray-800">{{ other_user.display_name }}</h2>
+                <p class="text-xs text-gray-500">{{ other_user.location }}</p>
+            </div>
+            <a href="/user/{{ other_user.id }}" class="text-paw-primary hover:underline text-sm">
+                View Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="flex-1 bg-gray-50 border-x overflow-y-auto p-4 space-y-4" id="messages-container">
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="flex {% if msg.sender_id == current_user.id %}justify-end{% else %}justify-start{% endif %}">
+                <div class="max-w-[75%] {% if msg.sender_id == current_user.id %}bg-paw-primary text-white{% else %}bg-white border{% endif %} rounded-2xl px-4 py-2 shadow-sm">
+                    <p class="{% if msg.sender_id == current_user.id %}text-white{% else %}text-gray-800{% endif %}">{{ msg.content }}</p>
+                    <p class="text-xs {% if msg.sender_id == current_user.id %}text-purple-200{% else %}text-gray-400{% endif %} mt-1">
+                        {{ msg.created_at.strftime('%I:%M %p') }}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-8">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-hand-wave text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500">Say hello to {{ other_user.display_name }}!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Message Input -->
+    <div class="bg-white rounded-b-xl shadow-sm border p-4">
+        <form action="/messages/{{ other_user.id }}/send" method="POST" class="flex space-x-3">
+            <input type="text" name="content" placeholder="Type a message..."
+                   class="flex-1 border rounded-full px-4 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary"
+                   autocomplete="off" required>
+            <button type="submit" class="w-10 h-10 bg-paw-primary text-white rounded-full flex items-center justify-center hover:bg-purple-700 transition">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Scroll to bottom of messages on load
+    const container = document.getElementById('messages-container');
+    container.scrollTop = container.scrollHeight;
+</script>
+{% endblock %}

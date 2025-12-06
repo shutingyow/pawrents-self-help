@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Find Help - PawPal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Find Dog-Sitting Help</h1>
+            <p class="text-gray-500">Browse available pawrents in your condo</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="GET" class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="grid md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                <select name="date_range" onchange="this.form.submit()"
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                    <option value="7" {% if date_range == '7' %}selected{% endif %}>Next 7 days</option>
+                    <option value="14" {% if date_range == '14' %}selected{% endif %}>Next 14 days</option>
+                    <option value="30" {% if date_range == '30' %}selected{% endif %}>Next 30 days</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Time of Day</label>
+                <select name="time_of_day" onchange="this.form.submit()"
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                    <option value="" {% if not time_of_day %}selected{% endif %}>Any time</option>
+                    <option value="morning" {% if time_of_day == 'morning' %}selected{% endif %}>Morning (6AM - 12PM)</option>
+                    <option value="afternoon" {% if time_of_day == 'afternoon' %}selected{% endif %}>Afternoon (12PM - 6PM)</option>
+                    <option value="evening" {% if time_of_day == 'evening' %}selected{% endif %}>Evening (6PM - 10PM)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Dog Size</label>
+                <select name="dog_size" onchange="this.form.submit()"
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                    <option value="" {% if not dog_size %}selected{% endif %}>All sizes welcome</option>
+                    <option value="small" {% if dog_size == 'small' %}selected{% endif %}>Small dogs</option>
+                    <option value="medium" {% if dog_size == 'medium' %}selected{% endif %}>Medium dogs</option>
+                    <option value="large" {% if dog_size == 'large' %}selected{% endif %}>Large dogs</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Block</label>
+                <select name="block" onchange="this.form.submit()"
+                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                    <option value="" {% if not block_filter %}selected{% endif %}>All blocks</option>
+                    <option value="Block 81" {% if block_filter == 'Block 81' %}selected{% endif %}>Block 81</option>
+                    <option value="Block 83" {% if block_filter == 'Block 83' %}selected{% endif %}>Block 83</option>
+                    <option value="Block 85" {% if block_filter == 'Block 85' %}selected{% endif %}>Block 85</option>
+                    <option value="Block 87" {% if block_filter == 'Block 87' %}selected{% endif %}>Block 87</option>
+                    <option value="Block 89" {% if block_filter == 'Block 89' %}selected{% endif %}>Block 89</option>
+                    <option value="Block 91" {% if block_filter == 'Block 91' %}selected{% endif %}>Block 91</option>
+                    <option value="Block 93" {% if block_filter == 'Block 93' %}selected{% endif %}>Block 93</option>
+                    <option value="Block 95" {% if block_filter == 'Block 95' %}selected{% endif %}>Block 95</option>
+                </select>
+            </div>
+        </div>
+        {% if date_range or time_of_day or dog_size or block_filter %}
+        <div class="mt-3 flex items-center justify-between">
+            <div class="flex flex-wrap gap-2">
+                {% if time_of_day %}
+                <span class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                    {{ time_of_day|capitalize }}
+                    <a href="?date_range={{ date_range }}&dog_size={{ dog_size }}&block={{ block_filter }}" class="ml-1 hover:text-purple-900">&times;</a>
+                </span>
+                {% endif %}
+                {% if dog_size %}
+                <span class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                    {{ dog_size|capitalize }} dogs
+                    <a href="?date_range={{ date_range }}&time_of_day={{ time_of_day }}&block={{ block_filter }}" class="ml-1 hover:text-purple-900">&times;</a>
+                </span>
+                {% endif %}
+                {% if block_filter %}
+                <span class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                    {{ block_filter }}
+                    <a href="?date_range={{ date_range }}&time_of_day={{ time_of_day }}&dog_size={{ dog_size }}" class="ml-1 hover:text-purple-900">&times;</a>
+                </span>
+                {% endif %}
+            </div>
+            <a href="/browse" class="text-sm text-gray-500 hover:text-paw-primary">Clear all filters</a>
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Results -->
+    <div class="space-y-4">
+        <p class="text-gray-600">
+            <span class="font-medium">{{ available_slots|length }}</span> available slots found
+        </p>
+
+        {% for item in available_slots %}
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition">
+            <div class="md:flex">
+                <!-- Pawrent Info -->
+                <div class="md:w-1/3 p-6 border-b md:border-b-0 md:border-r">
+                    <div class="flex items-start space-x-4">
+                        <img src="{{ item.user.profile_photo_url or 'https://via.placeholder.com/64' }}" alt="{{ item.user.display_name }}"
+                             class="w-16 h-16 rounded-full object-cover border-2 border-gray-100">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg">{{ item.user.display_name }}</h3>
+                            <p class="text-gray-500 text-sm flex items-center">
+                                <i class="fas fa-building mr-1"></i>
+                                {{ item.user.location }}
+                            </p>
+                            <p class="text-gray-600 text-sm mt-2 line-clamp-2">{{ item.user.bio }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Dog Info -->
+                    {% if item.dog %}
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <img src="{{ item.dog.photo_url or 'https://via.placeholder.com/48' }}" alt="{{ item.dog.name }}"
+                                 class="w-12 h-12 rounded-lg object-cover">
+                            <div>
+                                <p class="font-medium">{{ item.dog.name }}</p>
+                                <p class="text-sm text-gray-500">{{ item.dog.breed }} | {{ item.dog.size.value|capitalize }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Slot Info -->
+                <div class="md:w-2/3 p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <div class="flex items-center text-lg font-semibold text-gray-800 mb-2">
+                                <i class="fas fa-calendar-alt text-paw-primary mr-2"></i>
+                                {{ item.slot.date.strftime('%A, %B %d, %Y') }}
+                            </div>
+                            <div class="flex items-center text-gray-600 mb-2">
+                                <i class="fas fa-clock text-paw-secondary mr-2"></i>
+                                {{ item.slot.time_range_str() }}
+                            </div>
+                            {% if item.slot.notes %}
+                            <div class="flex items-start text-gray-600 mt-3">
+                                <i class="fas fa-sticky-note text-gray-400 mr-2 mt-1"></i>
+                                <p class="text-sm">{{ item.slot.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex flex-col space-y-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Available
+                            </span>
+                            <a href="/book/{{ item.slot.id }}"
+                               class="inline-flex items-center justify-center px-6 py-2 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                                <i class="fas fa-paper-plane mr-2"></i>
+                                Request
+                            </a>
+                            <a href="/messages/{{ item.user.id }}"
+                               class="inline-flex items-center justify-center px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm">
+                                <i class="fas fa-comment mr-2"></i>
+                                Message First
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Dog Compatibility -->
+                    {% if item.dog %}
+                    <div class="mt-4 pt-4 border-t">
+                        <p class="text-sm text-gray-500 mb-2">About {{ item.dog.name }}:</p>
+                        <p class="text-sm text-gray-600">{{ item.dog.temperament }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not available_slots %}
+        <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-search text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-800 mb-2">No available slots found</h3>
+            <p class="text-gray-500">Try adjusting your filters or check back later!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

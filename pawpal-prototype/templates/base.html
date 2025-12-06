@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PawPal{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'paw-primary': '#6366f1',
+                        'paw-secondary': '#f59e0b',
+                        'paw-bg': '#fefce8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2">
+                    <span class="text-3xl">🐾</span>
+                    <span class="text-xl font-bold text-paw-primary">PawPal</span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-paw-primary transition {% if active_page == 'home' %}text-paw-primary font-medium{% endif %}">
+                        <i class="fas fa-home mr-1"></i> Home
+                    </a>
+                    <a href="/browse" class="text-gray-600 hover:text-paw-primary transition {% if active_page == 'browse' %}text-paw-primary font-medium{% endif %}">
+                        <i class="fas fa-search mr-1"></i> Find Help
+                    </a>
+                    <a href="/calendar" class="text-gray-600 hover:text-paw-primary transition {% if active_page == 'calendar' %}text-paw-primary font-medium{% endif %}">
+                        <i class="fas fa-calendar mr-1"></i> My Availability
+                    </a>
+                    <a href="/bookings" class="text-gray-600 hover:text-paw-primary transition {% if active_page == 'bookings' %}text-paw-primary font-medium{% endif %}">
+                        <i class="fas fa-clipboard-list mr-1"></i> Bookings
+                    </a>
+                    <a href="/feed" class="text-gray-600 hover:text-paw-primary transition {% if active_page == 'feed' %}text-paw-primary font-medium{% endif %}">
+                        <i class="fas fa-comments mr-1"></i> Chitchat
+                    </a>
+                </div>
+
+                <!-- Right side - Messages, Notifications & Profile -->
+                <div class="flex items-center space-x-4">
+                    <a href="/messages" class="relative text-gray-600 hover:text-paw-primary transition {% if active_page == 'messages' %}text-paw-primary{% endif %}">
+                        <i class="fas fa-envelope text-xl"></i>
+                        {% if message_count > 0 %}
+                        <span class="notification-badge absolute -top-1 -right-1 bg-paw-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ message_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    <a href="/notifications" class="relative text-gray-600 hover:text-paw-primary transition">
+                        <i class="fas fa-bell text-xl"></i>
+                        {% if notification_count > 0 %}
+                        <span class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ notification_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    <a href="/profile" class="flex items-center space-x-2 hover:opacity-80 transition">
+                        <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.display_name }}"
+                             class="w-8 h-8 rounded-full object-cover border-2 border-paw-primary">
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden border-t bg-white">
+            <div class="flex justify-around py-2">
+                <a href="/" class="flex flex-col items-center text-xs {% if active_page == 'home' %}text-paw-primary{% else %}text-gray-500{% endif %}">
+                    <i class="fas fa-home text-lg mb-1"></i>
+                    Home
+                </a>
+                <a href="/browse" class="flex flex-col items-center text-xs {% if active_page == 'browse' %}text-paw-primary{% else %}text-gray-500{% endif %}">
+                    <i class="fas fa-search text-lg mb-1"></i>
+                    Find Help
+                </a>
+                <a href="/calendar" class="flex flex-col items-center text-xs {% if active_page == 'calendar' %}text-paw-primary{% else %}text-gray-500{% endif %}">
+                    <i class="fas fa-calendar text-lg mb-1"></i>
+                    Calendar
+                </a>
+                <a href="/bookings" class="flex flex-col items-center text-xs {% if active_page == 'bookings' %}text-paw-primary{% else %}text-gray-500{% endif %}">
+                    <i class="fas fa-clipboard-list text-lg mb-1"></i>
+                    Bookings
+                </a>
+                <a href="/feed" class="flex flex-col items-center text-xs {% if active_page == 'feed' %}text-paw-primary{% else %}text-gray-500{% endif %}">
+                    <i class="fas fa-comments text-lg mb-1"></i>
+                    Feed
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-auto py-6">
+        <div class="max-w-6xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>🐾 PawPal - Connecting Dog Lovers in Your Neighbourhood</p>
+            <p class="mt-1">Prototype v1.0</p>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
