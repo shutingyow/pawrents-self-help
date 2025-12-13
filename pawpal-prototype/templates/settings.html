@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - PawPal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center space-x-4">
+        <a href="/profile" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-arrow-left text-xl"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
+            <p class="text-gray-500">{{ subtitle }}</p>
+        </div>
+    </div>
+
+    {% if setting_type == 'notifications' %}
+    <!-- Notification Settings -->
+    <form action="/settings/notifications" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="divide-y">
+            <div class="p-4">
+                <h3 class="font-medium text-gray-800 mb-4">Email Notifications</h3>
+                <div class="space-y-4">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-medium text-gray-700">New booking requests</p>
+                            <p class="text-sm text-gray-500">Get notified when someone requests your help</p>
+                        </div>
+                        <input type="checkbox" name="notify_booking_requests" checked
+                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-medium text-gray-700">Booking confirmations</p>
+                            <p class="text-sm text-gray-500">Get notified when your requests are accepted</p>
+                        </div>
+                        <input type="checkbox" name="notify_booking_confirmed" checked
+                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-medium text-gray-700">New messages</p>
+                            <p class="text-sm text-gray-500">Get notified when you receive a new message</p>
+                        </div>
+                        <input type="checkbox" name="notify_messages" checked
+                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-medium text-gray-700">Community updates</p>
+                            <p class="text-sm text-gray-500">Get updates about new members and community posts</p>
+                        </div>
+                        <input type="checkbox" name="notify_community"
+                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <h3 class="font-medium text-gray-800 mb-4">Push Notifications</h3>
+                <div class="space-y-4">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <p class="font-medium text-gray-700">Enable push notifications</p>
+                            <p class="text-sm text-gray-500">Receive notifications on your device</p>
+                        </div>
+                        <input type="checkbox" name="push_enabled"
+                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 border-t">
+            <button type="submit" class="w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                Save Preferences
+            </button>
+        </div>
+    </form>
+
+    {% elif setting_type == 'privacy' %}
+    <!-- Privacy & Security Settings -->
+    <div class="space-y-4">
+        <!-- Change Password -->
+        <form action="/settings/change-password" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-800">Change Password</h3>
+            </div>
+            <div class="p-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input type="password" name="current_password" required
+                           class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input type="password" name="new_password" required minlength="6"
+                           class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input type="password" name="confirm_password" required
+                           class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                </div>
+                <button type="submit" class="w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                    Update Password
+                </button>
+            </div>
+        </form>
+
+        <!-- Privacy Options -->
+        <form action="/settings/privacy" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-800">Privacy Options</h3>
+            </div>
+            <div class="p-4 space-y-4">
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">Show profile to community</p>
+                        <p class="text-sm text-gray-500">Allow other members to see your profile</p>
+                    </div>
+                    <input type="checkbox" name="profile_visible" checked
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">Show location on profile</p>
+                        <p class="text-sm text-gray-500">Display your neighbourhood to others</p>
+                    </div>
+                    <input type="checkbox" name="location_visible" checked
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
+                <button type="submit" class="w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                    Save Privacy Settings
+                </button>
+            </div>
+        </form>
+
+        <!-- Danger Zone -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-red-50">
+                <h3 class="font-medium text-red-800">Danger Zone</h3>
+            </div>
+            <div class="p-4">
+                <p class="text-sm text-gray-600 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+                <button type="button" onclick="confirmDelete()" class="w-full py-3 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition font-medium">
+                    Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% elif setting_type == 'location' %}
+    <!-- Location Settings -->
+    <form action="/settings/location" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="p-4 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Your Neighbourhood</label>
+                <input type="text" name="location" value="{{ current_user.location }}"
+                       placeholder="e.g., Marina Bay, Singapore"
+                       class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                <p class="text-sm text-gray-500 mt-1">This helps connect you with nearby dog owners</p>
+            </div>
+
+            <div class="p-4 bg-blue-50 rounded-lg">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm text-blue-800 font-medium">Why we ask for your location</p>
+                        <p class="text-sm text-blue-700 mt-1">Your neighbourhood helps us show you dog owners nearby who might need help, and helps others find you when they need a dog sitter.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 border-t">
+            <button type="submit" class="w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
+                Update Location
+            </button>
+        </div>
+    </form>
+
+    {% elif setting_type == 'help' %}
+    <!-- Help & Support -->
+    <div class="space-y-4">
+        <!-- FAQs -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-800">Frequently Asked Questions</h3>
+            </div>
+            <div class="divide-y">
+                <details class="group">
+                    <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50">
+                        <span class="font-medium text-gray-700">How does PawPal work?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-4 pb-4 text-gray-600">
+                        PawPal connects dog owners in your community. You can set your availability to help watch other dogs, and request help when you need someone to watch yours. It's a trust-based community of dog lovers helping each other!
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50">
+                        <span class="font-medium text-gray-700">Is PawPal free to use?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-4 pb-4 text-gray-600">
+                        Yes! PawPal is completely free. It's a community-based platform where members help each other. There are no fees or subscriptions.
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50">
+                        <span class="font-medium text-gray-700">How do I book a dog sitter?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-4 pb-4 text-gray-600">
+                        Browse available helpers in your area, find a time slot that works for you, and send a booking request. The helper will review your request and can accept or decline. Once accepted, you can message each other to coordinate details.
+                    </div>
+                </details>
+                <details class="group">
+                    <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50">
+                        <span class="font-medium text-gray-700">How do I become a helper?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-4 pb-4 text-gray-600">
+                        Go to "My Availability" and add time slots when you're free to help. Other members can then see your availability and send you booking requests.
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-800">Contact Support</h3>
+            </div>
+            <div class="p-4 space-y-4">
+                <p class="text-gray-600">Have a question or need help? We're here for you!</p>
+                <a href="mailto:support@pawpal.app" class="block w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium text-center">
+                    <i class="fas fa-envelope mr-2"></i>
+                    Email Support
+                </a>
+            </div>
+        </div>
+
+        <!-- App Info -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 text-center text-gray-500 text-sm">
+                <p>PawPal v1.0.0</p>
+                <p class="mt-1">Made with <i class="fas fa-heart text-red-400"></i> for dog lovers</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function confirmDelete() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        if (confirm('This will permanently delete all your data including your dog profile, bookings, and messages. Continue?')) {
+            window.location.href = '/settings/delete-account';
+        }
+    }
+}
+</script>
+{% endblock %}

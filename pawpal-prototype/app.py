@@ -438,15 +438,41 @@ def create_app(config_name=None):
     @app.route('/calendar')
     @login_required
     def my_calendar():
+        # Get month/year from query params or use current
+        try:
+            month = int(request.args.get('month', date.today().month))
+            year = int(request.args.get('year', date.today().year))
+        except (ValueError, TypeError):
+            month = date.today().month
+            year = date.today().year
+
+        # Ensure valid month
+        if month < 1:
+            month = 12
+            year -= 1
+        elif month > 12:
+            month = 1
+            year += 1
+
         my_slots = AvailabilitySlot.query.filter_by(user_id=current_user.id).order_by(
             AvailabilitySlot.date, AvailabilitySlot.start_time
         ).all()
 
+        # Calculate prev/next month
+        prev_month = month - 1 if month > 1 else 12
+        prev_year = year if month > 1 else year - 1
+        next_month = month + 1 if month < 12 else 1
+        next_year = year if month < 12 else year + 1
+
         return render_template('calendar.html',
                                active_page='calendar',
                                my_slots=my_slots,
-                               calendar_weeks=get_calendar_weeks(current_user.id),
-                               current_month=date.today().strftime('%B %Y'))
+                               calendar_weeks=get_calendar_weeks(current_user.id, month, year),
+                               current_month=date(year, month, 1).strftime('%B %Y'),
+                               prev_month=prev_month,
+                               prev_year=prev_year,
+                               next_month=next_month,
+                               next_year=next_year)
 
     @app.route('/calendar/add', methods=['POST'])
     @login_required
@@ -635,6 +661,109 @@ def create_app(config_name=None):
             flash('Invalid file type. Please upload an image (PNG, JPG, GIF, WebP).', 'error')
 
         return redirect(url_for('profile'))
+
+    # ============================================================
+    # SETTINGS ROUTES
+    # ============================================================
+
+    @app.route('/settings/notifications', methods=['GET', 'POST'])
+    @login_required
+    def settings_notifications():
+        if request.method == 'POST':
+            # In a real app, save these preferences to the database
+            flash('Notification preferences saved!', 'success')
+            return redirect(url_for('settings_notifications'))
+
+        return render_template('settings.html',
+                               active_page='profile',
+                               setting_type='notifications',
+                               title='Notification Preferences',
+                               subtitle='Manage how you receive notifications')
+
+    @app.route('/settings/privacy', methods=['GET', 'POST'])
+    @login_required
+    def settings_privacy():
+        if request.method == 'POST':
+            flash('Privacy settings saved!', 'success')
+            return redirect(url_for('settings_privacy'))
+
+        return render_template('settings.html',
+                               active_page='profile',
+                               setting_type='privacy',
+                               title='Privacy & Security',
+                               subtitle='Manage your password and privacy settings')
+
+    @app.route('/settings/change-password', methods=['POST'])
+    @login_required
+    def change_password():
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not current_user.check_password(current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('settings_privacy'))
+
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('settings_privacy'))
+
+        if len(new_password) < 6:
+            flash('Password must be at least 6 characters.', 'error')
+            return redirect(url_for('settings_privacy'))
+
+        current_user.set_password(new_password)
+        db.session.commit()
+        flash('Password updated successfully!', 'success')
+        return redirect(url_for('settings_privacy'))
+
+    @app.route('/settings/location', methods=['GET', 'POST'])
+    @login_required
+    def settings_location():
+        if request.method == 'POST':
+            location = request.form.get('location', '').strip()
+            current_user.location = location
+            db.session.commit()
+            flash('Location updated!', 'success')
+            return redirect(url_for('settings_location'))
+
+        return render_template('settings.html',
+                               active_page='profile',
+                               setting_type='location',
+                               title='Location Settings',
+                               subtitle='Update your neighbourhood')
+
+    @app.route('/settings/help')
+    @login_required
+    def settings_help():
+        return render_template('settings.html',
+                               active_page='profile',
+                               setting_type='help',
+                               title='Help & Support',
+                               subtitle='FAQs and contact support')
+
+    @app.route('/settings/delete-account')
+    @login_required
+    def delete_account():
+        user_id = current_user.id
+        logout_user()
+
+        # Delete user's data
+        user = User.query.get(user_id)
+        if user:
+            # Delete related data
+            Dog.query.filter_by(owner_id=user_id).delete()
+            AvailabilitySlot.query.filter_by(user_id=user_id).delete()
+            Booking.query.filter((Booking.requester_id == user_id) | (Booking.provider_id == user_id)).delete()
+            Notification.query.filter_by(user_id=user_id).delete()
+            Post.query.filter_by(author_id=user_id).delete()
+            Message.query.filter_by(sender_id=user_id).delete()
+            Conversation.query.filter((Conversation.user1_id == user_id) | (Conversation.user2_id == user_id)).delete()
+            db.session.delete(user)
+            db.session.commit()
+
+        flash('Your account has been deleted.', 'info')
+        return redirect(url_for('login'))
 
     @app.route('/feed')
     @login_required
@@ -883,11 +1012,16 @@ END:VCALENDAR"""
     return app
 
 
-def get_calendar_weeks(user_id):
-    """Generate calendar data for the current month"""
+def get_calendar_weeks(user_id, month=None, year=None):
+    """Generate calendar data for the specified month"""
     today = date.today()
+    if month is None:
+        month = today.month
+    if year is None:
+        year = today.year
+
     cal = calendar.Calendar(firstweekday=6)
-    month_days = cal.monthdatescalendar(today.year, today.month)
+    month_days = cal.monthdatescalendar(year, month)
 
     weeks = []
     for week in month_days:
@@ -898,7 +1032,7 @@ def get_calendar_weeks(user_id):
                 'date': day,
                 'day': day.day,
                 'is_today': day == today,
-                'is_current_month': day.month == today.month,
+                'is_current_month': day.month == month,
                 'slots': day_slots
             })
         weeks.append(week_data)
