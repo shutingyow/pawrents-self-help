@@ -18,57 +18,45 @@
     {% if setting_type == 'notifications' %}
     <!-- Notification Settings -->
     <form action="/settings/notifications" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div class="divide-y">
-            <div class="p-4">
-                <h3 class="font-medium text-gray-800 mb-4">Email Notifications</h3>
-                <div class="space-y-4">
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-700">New booking requests</p>
-                            <p class="text-sm text-gray-500">Get notified when someone requests your help</p>
-                        </div>
-                        <input type="checkbox" name="notify_booking_requests" checked
-                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
-                    </label>
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-700">Booking confirmations</p>
-                            <p class="text-sm text-gray-500">Get notified when your requests are accepted</p>
-                        </div>
-                        <input type="checkbox" name="notify_booking_confirmed" checked
-                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
-                    </label>
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-700">New messages</p>
-                            <p class="text-sm text-gray-500">Get notified when you receive a new message</p>
-                        </div>
-                        <input type="checkbox" name="notify_messages" checked
-                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
-                    </label>
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-700">Community updates</p>
-                            <p class="text-sm text-gray-500">Get updates about new members and community posts</p>
-                        </div>
-                        <input type="checkbox" name="notify_community"
-                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
-                    </label>
-                </div>
-            </div>
-
-            <div class="p-4">
-                <h3 class="font-medium text-gray-800 mb-4">Push Notifications</h3>
-                <div class="space-y-4">
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-700">Enable push notifications</p>
-                            <p class="text-sm text-gray-500">Receive notifications on your device</p>
-                        </div>
-                        <input type="checkbox" name="push_enabled"
-                               class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
-                    </label>
-                </div>
+        <div class="p-4">
+            <h3 class="font-medium text-gray-800 mb-4">Email Notifications</h3>
+            <div class="space-y-4">
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">New booking requests</p>
+                        <p class="text-sm text-gray-500">Get notified when someone requests your help</p>
+                    </div>
+                    <input type="checkbox" name="notify_booking_requests" value="1"
+                           {% if current_user.notify_booking_requests %}checked{% endif %}
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">Booking confirmations</p>
+                        <p class="text-sm text-gray-500">Get notified when your requests are accepted</p>
+                    </div>
+                    <input type="checkbox" name="notify_booking_confirmed" value="1"
+                           {% if current_user.notify_booking_confirmed %}checked{% endif %}
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">New messages</p>
+                        <p class="text-sm text-gray-500">Get notified when you receive a new message</p>
+                    </div>
+                    <input type="checkbox" name="notify_messages" value="1"
+                           {% if current_user.notify_messages %}checked{% endif %}
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <p class="font-medium text-gray-700">Community updates</p>
+                        <p class="text-sm text-gray-500">Get updates about new members and community posts</p>
+                    </div>
+                    <input type="checkbox" name="notify_community" value="1"
+                           {% if current_user.notify_community %}checked{% endif %}
+                           class="w-5 h-5 text-paw-primary border-gray-300 rounded focus:ring-paw-primary">
+                </label>
             </div>
         </div>
 
@@ -82,7 +70,8 @@
     {% elif setting_type == 'privacy' %}
     <!-- Privacy & Security Settings -->
     <div class="space-y-4">
-        <!-- Change Password -->
+        {% if not current_user.is_sso_user %}
+        <!-- Change Password (only for non-SSO users) -->
         <form action="/settings/change-password" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div class="p-4 border-b bg-gray-50">
                 <h3 class="font-medium text-gray-800">Change Password</h3>
@@ -108,6 +97,23 @@
                 </button>
             </div>
         </form>
+        {% else %}
+        <!-- SSO User Notice -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-4 border-b bg-gray-50">
+                <h3 class="font-medium text-gray-800">Password</h3>
+            </div>
+            <div class="p-4">
+                <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm text-blue-800 font-medium">Signed in with Google</p>
+                        <p class="text-sm text-blue-700 mt-1">You signed up using Google Sign-In, so your password is managed by Google. To change your password, please visit your Google account settings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Privacy Options -->
         <form action="/settings/privacy" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -192,11 +198,11 @@
             <div class="divide-y">
                 <details class="group">
                     <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50">
-                        <span class="font-medium text-gray-700">How does PawPal work?</span>
+                        <span class="font-medium text-gray-700">How does Pawrents Self-Help work?</span>
                         <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
                     </summary>
                     <div class="px-4 pb-4 text-gray-600">
-                        PawPal connects dog owners in your community. You can set your availability to help watch other dogs, and request help when you need someone to watch yours. It's a trust-based community of dog lovers helping each other!
+                        Imagine you are at work 3 days a week and your dog is at home alone. Your neighbour with a dog is working from home on those days! Idea: why don't we alternate hanging out with our dogs? How it works: You can set your availability to help watch other dogs, and request help when you need someone to watch yours. It's a trust-based community of dog lovers helping each other!
                     </div>
                 </details>
                 <details class="group">
@@ -205,7 +211,7 @@
                         <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
                     </summary>
                     <div class="px-4 pb-4 text-gray-600">
-                        Yes! PawPal is completely free. It's a community-based platform where members help each other. There are no fees or subscriptions.
+                        Yes! Pawrents Self-Help is completely free. It's a community-based platform where members help each other. There are no fees or subscriptions.
                     </div>
                 </details>
                 <details class="group">
@@ -214,7 +220,7 @@
                         <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
                     </summary>
                     <div class="px-4 pb-4 text-gray-600">
-                        Browse available helpers in your area, find a time slot that works for you, and send a booking request. The helper will review your request and can accept or decline. Once accepted, you can message each other to coordinate details.
+                        Browse available neighbours, find a time slot that works for you, and send a booking request. The helper will review your request and can accept or decline. Once accepted, you can message each other to coordinate details.
                     </div>
                 </details>
                 <details class="group">
@@ -236,7 +242,7 @@
             </div>
             <div class="p-4 space-y-4">
                 <p class="text-gray-600">Have a question or need help? We're here for you!</p>
-                <a href="mailto:support@pawpal.app" class="block w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium text-center">
+                <a href="mailto:shuting.yow@gmail.com" class="block w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium text-center">
                     <i class="fas fa-envelope mr-2"></i>
                     Email Support
                 </a>
@@ -246,7 +252,7 @@
         <!-- App Info -->
         <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div class="p-4 text-center text-gray-500 text-sm">
-                <p>PawPal v1.0.0</p>
+                <p>Pawrents Self-Help v1.0.0</p>
                 <p class="mt-1">Made with <i class="fas fa-heart text-red-400"></i> for dog lovers</p>
             </div>
         </div>

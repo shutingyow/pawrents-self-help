@@ -148,8 +148,8 @@
 
                         <div class="flex flex-col space-y-2">
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                Available
+                                <i class="fas fa-dog mr-1"></i>
+                                {{ item.slot.spots_remaining() }} of {{ item.slot.max_dogs }} spot{{ 's' if item.slot.max_dogs > 1 else '' }}
                             </span>
                             <a href="/book/{{ item.slot.id }}"
                                class="inline-flex items-center justify-center px-6 py-2 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">

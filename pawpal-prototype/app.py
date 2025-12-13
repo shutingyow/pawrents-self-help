@@ -72,7 +72,13 @@ def create_app(config_name=None):
 
     # Create database tables
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print("Database tables created successfully")
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+            print(f"Database URL: {app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT SET')[:50]}...")
+            raise
 
     # Setup Flask-Login
     login_manager = LoginManager()
@@ -156,6 +162,10 @@ def create_app(config_name=None):
 
                 if user:
                     # Existing user - log them in
+                    # Ensure SSO flag is set for existing users who might have registered via OAuth
+                    if not user.is_sso_user:
+                        user.is_sso_user = True
+                        db.session.commit()
                     login_user(user)
                     flash(f'Welcome back, {user.display_name}!', 'success')
                     return redirect(url_for('home'))
@@ -165,7 +175,8 @@ def create_app(config_name=None):
                         email=email,
                         display_name=name,
                         profile_photo_url=picture,
-                        location=''
+                        location='',
+                        is_sso_user=True  # Mark as SSO user
                     )
                     # Set a random password (user won't need it for OAuth)
                     user.set_password(os.urandom(32).hex())
@@ -305,6 +316,11 @@ def create_app(config_name=None):
             flash('This slot is no longer available.', 'error')
             return redirect(url_for('browse'))
 
+        # Check if slot still has capacity
+        if not slot.has_capacity():
+            flash('This slot is fully booked.', 'error')
+            return redirect(url_for('browse'))
+
         provider = User.query.get(slot.user_id)
         user_dog = current_user.get_dog()
 
@@ -321,6 +337,11 @@ def create_app(config_name=None):
 
         if slot.status != SlotStatus.AVAILABLE:
             flash('This slot is no longer available.', 'error')
+            return redirect(url_for('browse'))
+
+        # Check if slot still has capacity
+        if not slot.has_capacity():
+            flash('This slot is fully booked.', 'error')
             return redirect(url_for('browse'))
 
         message = request.form.get('message', '')
@@ -372,10 +393,12 @@ def create_app(config_name=None):
         booking.status = BookingStatus.CONFIRMED
         booking.response_message = "Looking forward to it!"
 
-        # Mark slot as booked
+        # Check if slot is at capacity after this confirmation
         slot = AvailabilitySlot.query.get(booking.slot_id)
         if slot:
-            slot.status = SlotStatus.BOOKED
+            # Only mark as booked if we've reached max capacity
+            if not slot.has_capacity():
+                slot.status = SlotStatus.BOOKED
 
         # Notify requester
         notification = Notification(
@@ -426,9 +449,10 @@ def create_app(config_name=None):
 
         booking.status = BookingStatus.CANCELLED
 
-        # Release the slot if it was booked
+        # Reopen the slot if it was marked as fully booked
         slot = AvailabilitySlot.query.get(booking.slot_id)
         if slot and slot.status == SlotStatus.BOOKED:
+            # Re-check capacity after cancellation - slot should now have room
             slot.status = SlotStatus.AVAILABLE
 
         db.session.commit()
@@ -481,6 +505,14 @@ def create_app(config_name=None):
         start_time_str = request.form.get('start_time')
         end_time_str = request.form.get('end_time')
         notes = request.form.get('notes', '')
+        max_dogs = request.form.get('max_dogs', '1')
+
+        # Validate max_dogs (1-3)
+        try:
+            max_dogs = int(max_dogs)
+            max_dogs = max(1, min(3, max_dogs))  # Clamp between 1 and 3
+        except (ValueError, TypeError):
+            max_dogs = 1
 
         if slot_date and start_time_str and end_time_str:
             slot = AvailabilitySlot(
@@ -489,7 +521,8 @@ def create_app(config_name=None):
                 start_time=datetime.strptime(start_time_str, '%H:%M').time(),
                 end_time=datetime.strptime(end_time_str, '%H:%M').time(),
                 status=SlotStatus.AVAILABLE,
-                notes=notes
+                notes=notes,
+                max_dogs=max_dogs
             )
             db.session.add(slot)
             db.session.commit()
@@ -670,7 +703,12 @@ def create_app(config_name=None):
     @login_required
     def settings_notifications():
         if request.method == 'POST':
-            # In a real app, save these preferences to the database
+            # Save notification preferences to database
+            current_user.notify_booking_requests = 'notify_booking_requests' in request.form
+            current_user.notify_booking_confirmed = 'notify_booking_confirmed' in request.form
+            current_user.notify_messages = 'notify_messages' in request.form
+            current_user.notify_community = 'notify_community' in request.form
+            db.session.commit()
             flash('Notification preferences saved!', 'success')
             return redirect(url_for('settings_notifications'))
 

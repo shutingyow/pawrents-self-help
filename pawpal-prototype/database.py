@@ -58,8 +58,15 @@ class User(db.Model, UserMixin):
     bio = db.Column(db.Text, default='')
     phone = db.Column(db.String(20), default='')
     is_active = db.Column(db.Boolean, default=True)
+    is_sso_user = db.Column(db.Boolean, default=False)  # True if registered via Google SSO
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Notification preferences
+    notify_booking_requests = db.Column(db.Boolean, default=True)
+    notify_booking_confirmed = db.Column(db.Boolean, default=True)
+    notify_messages = db.Column(db.Boolean, default=True)
+    notify_community = db.Column(db.Boolean, default=False)
 
     # Relationships
     dogs = db.relationship('Dog', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
@@ -116,6 +123,7 @@ class AvailabilitySlot(db.Model):
     notes = db.Column(db.Text, default='')
     is_recurring = db.Column(db.Boolean, default=False)
     recurrence_rule = db.Column(db.String(255), default='')
+    max_dogs = db.Column(db.Integer, default=1)  # How many dogs this slot can accommodate (1-3)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -125,6 +133,18 @@ class AvailabilitySlot(db.Model):
     def time_range_str(self):
         """Return formatted time range string"""
         return f"{self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
+
+    def get_confirmed_bookings_count(self):
+        """Get count of confirmed bookings for this slot"""
+        return self.bookings.filter(Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.PENDING])).count()
+
+    def has_capacity(self):
+        """Check if slot still has capacity for more bookings"""
+        return self.get_confirmed_bookings_count() < self.max_dogs
+
+    def spots_remaining(self):
+        """Get number of remaining spots"""
+        return max(0, self.max_dogs - self.get_confirmed_bookings_count())
 
     def __repr__(self):
         return f'<AvailabilitySlot {self.date} {self.start_time}-{self.end_time}>'
@@ -286,6 +306,9 @@ def get_available_slots_for_browse(current_user_id):
 
     result = []
     for slot in slots:
+        # Skip slots that have no remaining capacity
+        if not slot.has_capacity():
+            continue
         user = User.query.get(slot.user_id)
         dog = user.get_dog() if user else None
         result.append({
@@ -325,6 +348,10 @@ def get_available_slots_filtered(current_user_id, date_range=7, time_of_day='', 
 
     result = []
     for slot in slots:
+        # Skip slots that have no remaining capacity
+        if not slot.has_capacity():
+            continue
+
         user = User.query.get(slot.user_id)
         if not user:
             continue

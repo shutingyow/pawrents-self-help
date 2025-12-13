@@ -46,20 +46,35 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_ECHO = False  # Set to True to see SQL queries
 
 
+def get_database_url():
+    """Handle various postgres URL formats (Render, Supabase, etc.)"""
+    database_url = os.environ.get('DATABASE_URL', '')
+
+    if not database_url:
+        return f'sqlite:///{BASE_DIR / "pawpal.db"}'
+
+    # Handle postgres:// -> postgresql:// conversion
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+    # Add SSL mode for cloud databases if not already specified
+    if 'sslmode' not in database_url:
+        separator = '&' if '?' in database_url else '?'
+        database_url += f'{separator}sslmode=require'
+
+    return database_url
+
+
 class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
 
     # Override with environment variables in production
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key-change-me')
 
-    # Handle Render's postgres:// URL format (SQLAlchemy requires postgresql://)
-    # Fall back to SQLite if no DATABASE_URL is set
-    _database_url = os.environ.get('DATABASE_URL', '')
-    if _database_url.startswith('postgres://'):
-        _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = _database_url or f'sqlite:///{BASE_DIR / "pawpal.db"}'
+    # Database URL with proper postgres:// handling
+    SQLALCHEMY_DATABASE_URI = get_database_url()
 
 
 class TestingConfig(Config):
