@@ -162,19 +162,22 @@
     <form action="/settings/location" method="POST" class="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div class="p-4 space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Your Neighbourhood</label>
-                <input type="text" name="location" value="{{ current_user.location }}"
-                       placeholder="e.g., Marina Bay, Singapore"
-                       class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
-                <p class="text-sm text-gray-500 mt-1">This helps connect you with nearby dog owners</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Your Block Number</label>
+                <select name="location" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-paw-primary focus:border-paw-primary">
+                    <option value="">Select your block...</option>
+                    {% for block in [81, 83, 85, 87, 89, 91, 93, 95, 97] %}
+                    <option value="{{ block }}" {% if current_user.location == block|string %}selected{% endif %}>Block {{ block }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-sm text-gray-500 mt-1">Select your block in the condo</p>
             </div>
 
             <div class="p-4 bg-blue-50 rounded-lg">
                 <div class="flex items-start space-x-3">
                     <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
                     <div>
-                        <p class="text-sm text-blue-800 font-medium">Why we ask for your location</p>
-                        <p class="text-sm text-blue-700 mt-1">Your neighbourhood helps us show you dog owners nearby who might need help, and helps others find you when they need a dog sitter.</p>
+                        <p class="text-sm text-blue-800 font-medium">Why we ask for your block</p>
+                        <p class="text-sm text-blue-700 mt-1">Your block number helps pawrents in the same condo find each other easily for dog-sitting arrangements.</p>
                     </div>
                 </div>
             </div>
@@ -182,7 +185,7 @@
 
         <div class="p-4 bg-gray-50 border-t">
             <button type="submit" class="w-full py-3 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition font-medium">
-                Update Location
+                Update Block
             </button>
         </div>
     </form>

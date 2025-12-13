@@ -14,47 +14,84 @@
 
     <!-- Create Post -->
     <div class="bg-white rounded-xl shadow-sm border p-4">
-        <div class="flex items-start space-x-3">
-            <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.display_name }}"
-                 class="w-10 h-10 rounded-full object-cover">
-            <div class="flex-1">
-                <textarea placeholder="Share something with the community..."
-                          class="w-full border-0 focus:ring-0 resize-none text-gray-700 placeholder-gray-400"
-                          rows="2"></textarea>
-                <div class="flex items-center justify-between pt-3 border-t">
-                    <div class="flex space-x-2">
-                        <button class="p-2 text-gray-400 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition">
-                            <i class="fas fa-image"></i>
-                        </button>
-                        <button class="p-2 text-gray-400 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition">
-                            <i class="fas fa-calendar-plus"></i>
-                        </button>
-                        <button class="p-2 text-gray-400 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition">
-                            <i class="fas fa-at"></i>
+        <form action="/feed/post" method="POST" enctype="multipart/form-data" id="postForm">
+            <div class="flex items-start space-x-3">
+                <img src="{{ current_user.profile_photo_url or '/static/images/default-avatar.png' }}" alt="{{ current_user.display_name }}"
+                     class="w-10 h-10 rounded-full object-cover">
+                <div class="flex-1">
+                    <input type="hidden" name="type" id="postType" value="text">
+                    <div id="mentionContainer" class="relative">
+                        <textarea name="content" id="postContent" placeholder="Share something with the community..."
+                                  class="w-full border-0 focus:ring-0 resize-none text-gray-700 placeholder-gray-400"
+                                  rows="2" required></textarea>
+                        <!-- Mention Dropdown -->
+                        <div id="mentionDropdown" class="hidden absolute left-0 right-0 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                        </div>
+                    </div>
+
+                    <!-- Photo Preview -->
+                    <div id="photoPreview" class="hidden mt-3">
+                        <div class="relative inline-block">
+                            <img id="previewImage" src="" class="max-h-48 rounded-lg">
+                            <button type="button" onclick="removePhoto()" class="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Event Details (hidden by default) -->
+                    <div id="eventDetails" class="hidden mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-amber-800 mb-1">Event Date & Time</label>
+                                <input type="datetime-local" name="event_date" class="w-full border border-amber-300 rounded px-2 py-1 text-sm focus:ring-amber-500 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-amber-800 mb-1">Location</label>
+                                <input type="text" name="event_location" placeholder="e.g., Block 5 Playground" class="w-full border border-amber-300 rounded px-2 py-1 text-sm focus:ring-amber-500 focus:border-amber-500">
+                            </div>
+                        </div>
+                        <button type="button" onclick="hideEventDetails()" class="mt-2 text-xs text-amber-700 hover:text-amber-900">
+                            <i class="fas fa-times mr-1"></i> Cancel Event
                         </button>
                     </div>
-                    <button class="px-4 py-2 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
-                        Post
-                    </button>
+
+                    <div class="flex items-center justify-between pt-3 border-t mt-3">
+                        <div class="flex space-x-2">
+                            <input type="file" name="photo" id="photoInput" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+                            <button type="button" onclick="document.getElementById('photoInput').click()" class="p-2 text-gray-400 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition" title="Add Photo">
+                                <i class="fas fa-image"></i>
+                            </button>
+                            <button type="button" onclick="showEventDetails()" class="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition" title="Create Event">
+                                <i class="fas fa-calendar-plus"></i>
+                            </button>
+                            <button type="button" onclick="insertMention()" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition" title="Mention Someone">
+                                <i class="fas fa-at"></i>
+                            </button>
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+                            Post
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 
     <!-- Filter Tabs -->
     <div class="flex space-x-2 overflow-x-auto pb-2">
-        <button class="px-4 py-2 bg-paw-primary text-white rounded-full text-sm font-medium whitespace-nowrap">
+        <a href="/feed" class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
+            {% if not post_filter %}bg-paw-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
             All Posts
-        </button>
-        <button class="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition whitespace-nowrap">
+        </a>
+        <a href="/feed?filter=photo" class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
+            {% if post_filter == 'photo' %}bg-paw-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
             <i class="fas fa-image mr-1"></i> Photos
-        </button>
-        <button class="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition whitespace-nowrap">
+        </a>
+        <a href="/feed?filter=event" class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
+            {% if post_filter == 'event' %}bg-paw-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
             <i class="fas fa-calendar mr-1"></i> Events
-        </button>
-        <button class="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium hover:bg-gray-200 transition whitespace-nowrap">
-            <i class="fas fa-lightbulb mr-1"></i> Tips
-        </button>
+        </a>
     </div>
 
     <!-- Posts Feed -->
@@ -67,12 +104,12 @@
             <!-- Post Header -->
             <div class="p-4 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <img src="{{ author.profile_photo_url }}" alt="{{ author.display_name }}"
+                    <img src="{{ author.profile_photo_url or '/static/images/default-avatar.png' }}" alt="{{ author.display_name }}"
                          class="w-10 h-10 rounded-full object-cover">
                     <div>
                         <p class="font-medium">{{ author.display_name }}</p>
                         <p class="text-xs text-gray-500">
-                            {{ author.location }} •
+                            Block {{ author.location or '?' }}
                             {% set time_diff = (now - post.created_at).total_seconds() %}
                             {% if time_diff < 3600 %}
                             {{ (time_diff / 60)|int }} min ago
@@ -84,14 +121,23 @@
                         </p>
                     </div>
                 </div>
-                <button class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-ellipsis-h"></i>
-                </button>
+                {% if author.id == current_user.id %}
+                <div class="relative">
+                    <button class="text-gray-400 hover:text-gray-600" onclick="togglePostMenu({{ post.id }})">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div id="postMenu{{ post.id }}" class="hidden absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border z-10">
+                        <a href="/feed/post/{{ post.id }}/delete" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg" onclick="return confirm('Delete this post?')">
+                            <i class="fas fa-trash mr-2"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Post Content -->
             <div class="px-4 pb-3">
-                <p class="text-gray-800">{{ post.content }}</p>
+                <p class="text-gray-800 whitespace-pre-wrap">{{ post.content|replace('@', '<span class="text-blue-600 font-medium">@')|replace(' ', '</span> ')|safe }}</p>
             </div>
 
             <!-- Event Details (if event post) -->
@@ -119,7 +165,7 @@
             {% endif %}
 
             <!-- Post Image (if photo post) -->
-            {% if post.media_urls %}
+            {% if post.media_urls and post.media_urls|length > 0 %}
             <div class="px-4 pb-3">
                 <img src="{{ post.media_urls[0] }}" alt="Post image"
                      class="w-full rounded-lg object-cover max-h-96">
@@ -135,35 +181,187 @@
                     <span class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center -ml-1">
                         <i class="fas fa-paw text-amber-500 text-xs"></i>
                     </span>
-                    <span class="ml-1">{{ post.likes }}</span>
+                    <span class="ml-1">{{ post.likes_count }}</span>
                 </div>
-                <span>3 comments</span>
+                <span>{{ post.comments.count() }} comment{{ 's' if post.comments.count() != 1 else '' }}</span>
             </div>
 
             <!-- Action Buttons -->
             <div class="p-2 flex justify-around">
-                <button class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+                <a href="/feed/post/{{ post.id }}/like" class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
                     <i class="far fa-heart mr-2"></i>
                     Like
-                </button>
-                <button class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition">
+                </a>
+                <button onclick="toggleComments({{ post.id }})" class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-paw-primary hover:bg-purple-50 rounded-lg transition">
                     <i class="far fa-comment mr-2"></i>
                     Comment
                 </button>
-                <button class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition">
-                    <i class="fas fa-share mr-2"></i>
-                    Share
-                </button>
+                <a href="/messages/{{ author.id }}" class="flex-1 py-2 flex items-center justify-center text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Message
+                </a>
+            </div>
+
+            <!-- Comments Section (hidden by default) -->
+            <div id="comments{{ post.id }}" class="hidden border-t">
+                <div class="p-4 space-y-3 max-h-48 overflow-y-auto">
+                    {% for comment in post.comments.order_by('created_at').limit(5).all() %}
+                    <div class="flex space-x-2">
+                        <img src="{{ comment.author.profile_photo_url or '/static/images/default-avatar.png' }}" class="w-8 h-8 rounded-full object-cover">
+                        <div class="flex-1 bg-gray-100 rounded-lg px-3 py-2">
+                            <p class="text-sm font-medium">{{ comment.author.display_name }}</p>
+                            <p class="text-sm text-gray-700">{{ comment.content }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <form action="/feed/post/{{ post.id }}/comment" method="POST" class="p-3 border-t flex space-x-2">
+                    <input type="text" name="content" placeholder="Write a comment..." required
+                           class="flex-1 border rounded-full px-4 py-2 text-sm focus:ring-paw-primary focus:border-paw-primary">
+                    <button type="submit" class="px-4 py-2 bg-paw-primary text-white rounded-full text-sm hover:bg-purple-700 transition">
+                        Post
+                    </button>
+                </form>
             </div>
         </div>
         {% endfor %}
-    </div>
 
-    <!-- Load More -->
-    <div class="text-center">
-        <button class="px-6 py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition">
-            Load More Posts
-        </button>
+        {% if not posts %}
+        <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comments text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-800 mb-2">No posts yet</h3>
+            <p class="text-gray-500">Be the first to share something with the community!</p>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+// Photo preview
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImage').src = e.target.result;
+            document.getElementById('photoPreview').classList.remove('hidden');
+            document.getElementById('postType').value = 'photo';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removePhoto() {
+    document.getElementById('photoInput').value = '';
+    document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('postType').value = 'text';
+}
+
+// Event creation
+function showEventDetails() {
+    document.getElementById('eventDetails').classList.remove('hidden');
+    document.getElementById('postType').value = 'event';
+    document.getElementById('postContent').placeholder = 'Describe your event...';
+}
+
+function hideEventDetails() {
+    document.getElementById('eventDetails').classList.add('hidden');
+    document.getElementById('postType').value = 'text';
+    document.getElementById('postContent').placeholder = 'Share something with the community...';
+}
+
+// Mention functionality
+const communityMembers = {{ community_members_json|safe if community_members_json else '[]' }};
+let mentionActive = false;
+
+function insertMention() {
+    const textarea = document.getElementById('postContent');
+    const cursorPos = textarea.selectionStart;
+    const textBefore = textarea.value.substring(0, cursorPos);
+    const textAfter = textarea.value.substring(cursorPos);
+    textarea.value = textBefore + '@' + textAfter;
+    textarea.selectionStart = textarea.selectionEnd = cursorPos + 1;
+    textarea.focus();
+    showMentionDropdown();
+}
+
+document.getElementById('postContent').addEventListener('input', function(e) {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1 && (lastAtIndex === 0 || textBeforeCursor[lastAtIndex - 1] === ' ')) {
+        const searchTerm = textBeforeCursor.substring(lastAtIndex + 1);
+        if (searchTerm.length >= 0 && !searchTerm.includes(' ')) {
+            showMentionDropdown(searchTerm);
+        } else {
+            hideMentionDropdown();
+        }
+    } else {
+        hideMentionDropdown();
+    }
+});
+
+function showMentionDropdown(searchTerm = '') {
+    const dropdown = document.getElementById('mentionDropdown');
+    const filtered = communityMembers.filter(m =>
+        m.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 5);
+
+    if (filtered.length === 0) {
+        hideMentionDropdown();
+        return;
+    }
+
+    dropdown.innerHTML = filtered.map(m => `
+        <div class="px-3 py-2 hover:bg-purple-50 cursor-pointer flex items-center space-x-2" onclick="selectMention('${m.name}')">
+            <img src="${m.photo || '/static/images/default-avatar.png'}" class="w-8 h-8 rounded-full">
+            <div>
+                <p class="text-sm font-medium">${m.name}</p>
+                <p class="text-xs text-gray-500">Block ${m.location || '?'}</p>
+            </div>
+        </div>
+    `).join('');
+    dropdown.classList.remove('hidden');
+}
+
+function hideMentionDropdown() {
+    document.getElementById('mentionDropdown').classList.add('hidden');
+}
+
+function selectMention(name) {
+    const textarea = document.getElementById('postContent');
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    const textAfter = value.substring(cursorPos);
+
+    textarea.value = value.substring(0, lastAtIndex) + '@' + name + ' ' + textAfter;
+    textarea.selectionStart = textarea.selectionEnd = lastAtIndex + name.length + 2;
+    textarea.focus();
+    hideMentionDropdown();
+}
+
+// Post menu toggle
+function togglePostMenu(postId) {
+    const menu = document.getElementById('postMenu' + postId);
+    menu.classList.toggle('hidden');
+}
+
+// Comments toggle
+function toggleComments(postId) {
+    const comments = document.getElementById('comments' + postId);
+    comments.classList.toggle('hidden');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#mentionContainer')) {
+        hideMentionDropdown();
+    }
+});
+</script>
 {% endblock %}

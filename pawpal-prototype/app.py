@@ -281,6 +281,45 @@ def create_app(config_name=None):
                                recent_notifications=get_user_notifications(current_user.id)[:4],
                                nearby_available=get_available_slots_for_browse(current_user.id))
 
+    @app.route('/community')
+    @login_required
+    def community_directory():
+        """Community directory - list all pawrents"""
+        block_filter = request.args.get('block', '')
+
+        # Get all users except current user
+        if block_filter:
+            users = User.query.filter(User.id != current_user.id, User.location == block_filter).all()
+        else:
+            users = User.query.filter(User.id != current_user.id).all()
+
+        pawrents = []
+        for user in users:
+            dog = user.get_dog()
+            available_slots = AvailabilitySlot.query.filter(
+                AvailabilitySlot.user_id == user.id,
+                AvailabilitySlot.status == SlotStatus.AVAILABLE,
+                AvailabilitySlot.date >= date.today()
+            ).count()
+            pawrents.append({
+                'user': user,
+                'dog': dog,
+                'available_slots': available_slots
+            })
+
+        # Get unique blocks for filter
+        all_blocks = db.session.query(User.location).filter(
+            User.location.isnot(None),
+            User.location != ''
+        ).distinct().all()
+        blocks = sorted([b[0] for b in all_blocks if b[0]])
+
+        return render_template('directory.html',
+                               active_page='community',
+                               pawrents=pawrents,
+                               blocks=blocks,
+                               block_filter=block_filter)
+
     @app.route('/browse')
     @login_required
     def browse():
@@ -380,10 +419,19 @@ def create_app(config_name=None):
     @app.route('/bookings')
     @login_required
     def my_bookings():
+        filter_type = request.args.get('filter', '')
         user_bookings = get_user_bookings(current_user.id)
+
+        # Filter bookings based on tab selection
+        if filter_type == 'requester':
+            user_bookings = [b for b in user_bookings if not b['is_provider']]
+        elif filter_type == 'helper':
+            user_bookings = [b for b in user_bookings if b['is_provider']]
+
         return render_template('bookings.html',
                                active_page='bookings',
-                               user_bookings=user_bookings)
+                               user_bookings=user_bookings,
+                               filter_type=filter_type)
 
     @app.route('/bookings/<int:booking_id>/accept')
     @login_required
@@ -810,26 +858,130 @@ def create_app(config_name=None):
     @app.route('/feed')
     @login_required
     def feed():
+        import json
+        post_filter = request.args.get('filter', '')
+
+        # Get posts with optional filter
+        if post_filter == 'photo':
+            posts = Post.query.filter_by(type=PostType.PHOTO).order_by(Post.created_at.desc()).all()
+        elif post_filter == 'event':
+            posts = Post.query.filter_by(type=PostType.EVENT).order_by(Post.created_at.desc()).all()
+        else:
+            posts = Post.query.order_by(Post.created_at.desc()).all()
+
+        posts_data = []
+        for post in posts:
+            author = User.query.get(post.author_id)
+            posts_data.append({'post': post, 'author': author})
+
+        # Get community members for @mentions
+        community_members = User.query.filter(User.id != current_user.id).all()
+        community_members_json = json.dumps([
+            {'id': u.id, 'name': u.display_name, 'photo': u.profile_photo_url or '', 'location': u.location or ''}
+            for u in community_members
+        ])
+
         return render_template('feed.html',
                                active_page='feed',
-                               posts=get_feed_posts())
+                               posts=posts_data,
+                               post_filter=post_filter,
+                               community_members_json=community_members_json)
 
     @app.route('/feed/post', methods=['POST'])
     @login_required
     def create_post():
         content = request.form.get('content', '').strip()
         post_type = request.form.get('type', 'text')
+        event_date_str = request.form.get('event_date', '')
+        event_location = request.form.get('event_location', '').strip()
+
+        if not content:
+            flash('Please enter some content.', 'error')
+            return redirect(url_for('feed'))
+
+        # Handle photo upload
+        media_urls = []
+        if 'photo' in request.files:
+            photo = request.files['photo']
+            if photo and photo.filename:
+                photo_url = save_uploaded_file(photo, 'posts')
+                if photo_url:
+                    media_urls.append(photo_url)
+                    post_type = 'photo'
+
+        # Handle event date
+        event_date = None
+        if post_type == 'event' and event_date_str:
+            try:
+                event_date = datetime.strptime(event_date_str, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                pass
+
+        post = Post(
+            author_id=current_user.id,
+            type=PostType(post_type),
+            content=content,
+            media_urls=media_urls if media_urls else None,
+            event_date=event_date,
+            event_location=event_location if post_type == 'event' else ''
+        )
+        db.session.add(post)
+        db.session.commit()
+        flash('Post shared!', 'success')
+
+        return redirect(url_for('feed'))
+
+    @app.route('/feed/post/<int:post_id>/like')
+    @login_required
+    def like_post(post_id):
+        from database import PostLike
+        post = Post.query.get_or_404(post_id)
+
+        # Check if already liked
+        existing_like = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+        if existing_like:
+            # Unlike
+            db.session.delete(existing_like)
+            post.likes_count = max(0, post.likes_count - 1)
+        else:
+            # Like
+            like = PostLike(post_id=post_id, user_id=current_user.id)
+            db.session.add(like)
+            post.likes_count += 1
+
+        db.session.commit()
+        return redirect(url_for('feed'))
+
+    @app.route('/feed/post/<int:post_id>/comment', methods=['POST'])
+    @login_required
+    def add_comment(post_id):
+        from database import Comment
+        post = Post.query.get_or_404(post_id)
+        content = request.form.get('content', '').strip()
 
         if content:
-            post = Post(
+            comment = Comment(
+                post_id=post_id,
                 author_id=current_user.id,
-                type=PostType(post_type),
                 content=content
             )
-            db.session.add(post)
+            db.session.add(comment)
             db.session.commit()
-            flash('Post shared!', 'success')
 
+        return redirect(url_for('feed'))
+
+    @app.route('/feed/post/<int:post_id>/delete')
+    @login_required
+    def delete_post(post_id):
+        post = Post.query.get_or_404(post_id)
+
+        if post.author_id != current_user.id:
+            flash('Unauthorized action.', 'error')
+            return redirect(url_for('feed'))
+
+        db.session.delete(post)
+        db.session.commit()
+        flash('Post deleted.', 'info')
         return redirect(url_for('feed'))
 
     @app.route('/notifications')

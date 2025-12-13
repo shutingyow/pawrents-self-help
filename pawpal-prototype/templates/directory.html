@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Community Directory - PawPal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Community Directory</h1>
+            <p class="text-gray-500">All pawrents in our condo community</p>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-600">
+            <i class="fas fa-users text-paw-primary"></i>
+            <span>{{ pawrents|length }} members</span>
+        </div>
+    </div>
+
+    <!-- Filter by Block -->
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-medium text-gray-700 mr-2">Filter by block:</span>
+            <a href="/community" class="px-3 py-1 rounded-full text-sm {% if not block_filter %}bg-paw-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+                All
+            </a>
+            {% for block in blocks %}
+            <a href="/community?block={{ block }}" class="px-3 py-1 rounded-full text-sm {% if block_filter == block|string %}bg-paw-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+                Block {{ block }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pawrents Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for pawrent in pawrents %}
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition">
+            <div class="p-4">
+                <div class="flex items-start space-x-4">
+                    <img src="{{ pawrent.user.profile_photo_url or '/static/images/default-avatar.png' }}"
+                         alt="{{ pawrent.user.display_name }}"
+                         class="w-16 h-16 rounded-full object-cover border-2 border-gray-100">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-lg truncate">{{ pawrent.user.display_name }}</h3>
+                        <p class="text-gray-500 text-sm">
+                            <i class="fas fa-building mr-1"></i>
+                            Block {{ pawrent.user.location or '?' }}
+                        </p>
+                        {% if pawrent.dog %}
+                        <div class="flex items-center mt-2 text-sm text-paw-secondary">
+                            <i class="fas fa-dog mr-2"></i>
+                            <span>{{ pawrent.dog.name }}</span>
+                            <span class="mx-1">-</span>
+                            <span class="text-gray-500">{{ pawrent.dog.breed }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if pawrent.dog %}
+                <div class="mt-4 flex items-center space-x-3">
+                    <img src="{{ pawrent.dog.photo_url or '/static/images/default-dog.png' }}"
+                         alt="{{ pawrent.dog.name }}"
+                         class="w-12 h-12 rounded-lg object-cover">
+                    <div class="flex-1 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 bg-purple-100 text-paw-primary rounded-full text-xs">
+                                {{ pawrent.dog.size.value|capitalize }}
+                            </span>
+                            <span class="text-gray-500">{{ pawrent.dog.age }} yrs</span>
+                        </div>
+                        {% if pawrent.dog.temperament %}
+                        <p class="text-gray-600 mt-1 truncate">{{ pawrent.dog.temperament }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Availability indicator -->
+                {% if pawrent.available_slots > 0 %}
+                <div class="mt-4 p-2 bg-green-50 rounded-lg">
+                    <p class="text-sm text-green-700">
+                        <i class="fas fa-calendar-check mr-1"></i>
+                        {{ pawrent.available_slots }} slot{{ 's' if pawrent.available_slots > 1 else '' }} available
+                    </p>
+                </div>
+                {% endif %}
+
+                <div class="mt-4 flex space-x-2">
+                    <a href="/messages/{{ pawrent.user.id }}"
+                       class="flex-1 py-2 text-center bg-paw-primary text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+                        <i class="fas fa-comment mr-1"></i> Message
+                    </a>
+                    {% if pawrent.available_slots > 0 %}
+                    <a href="/browse?block={{ pawrent.user.location }}"
+                       class="flex-1 py-2 text-center border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                        <i class="fas fa-calendar mr-1"></i> View Slots
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not pawrents %}
+    <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-users text-gray-400 text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-800 mb-2">No pawrents found</h3>
+        <p class="text-gray-500">{% if block_filter %}No pawrents in Block {{ block_filter }} yet.{% else %}Be the first to join the community!{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
