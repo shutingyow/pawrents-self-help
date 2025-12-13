@@ -17,7 +17,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.utils import secure_filename
 from flask_dance.contrib.google import make_google_blueprint, google
 
-from config import config
+from config import config, get_database_url
 from database import (
     db, bcrypt, User, Dog, AvailabilitySlot, Booking, Post, Notification,
     Conversation, Message,
@@ -65,6 +65,10 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+
+    # Set database URL at runtime (important for production with env vars)
+    if config_name == 'production' or not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = get_database_url()
 
     # Initialize extensions
     db.init_app(app)

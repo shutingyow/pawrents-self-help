@@ -73,8 +73,8 @@ class ProductionConfig(Config):
     # Override with environment variables in production
     SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key-change-me')
 
-    # Database URL with proper postgres:// handling
-    SQLALCHEMY_DATABASE_URI = get_database_url()
+    # Database URL - set to None so app.py can set it at runtime
+    SQLALCHEMY_DATABASE_URI = None
 
 
 class TestingConfig(Config):
